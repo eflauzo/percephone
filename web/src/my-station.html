@@ -1,0 +1,376 @@
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
+
+<link href='fonts.css' rel='stylesheet' type='text/css'>
+
+
+
+<dom-module id="my-station">
+  <template>
+    <style>
+    paper-card.station {
+
+        margin: 5px 5px 5px 5px;
+
+    }
+
+    .wrapper {
+    display: grid;
+     grid-template-columns: 40% 40% 20%;
+     grid-gap: 2px;
+     background-color: #fff;
+     color: #444;
+   }
+
+       --paper-font-button: {
+         @apply(--paper-font-common-base);
+         @apply(--paper-font-common-nowrap);
+         font-size: 10px;
+         font-weight: 500;
+         letter-spacing: 0.018em;
+         line-height: 24px;
+         text-transform: uppercase;
+       };
+
+   .countdown_status {
+        grid-column-start: 1;
+        grid-column-end: 1;
+        grid-row-start: 1;
+        grid-row-end: 4;
+    }
+
+    .act {
+         grid-column-start: 3;
+         grid-column-end: 3;
+         grid-row-start: 3;
+         grid-row-end: 4;
+     }
+
+     .schedule {
+          grid-column-start: 2;
+          grid-column-end: 3;
+          grid-row-start: 1;
+          grid-row-end: 4;
+      }
+
+    div.station {
+        padding: 1px;
+        border-radius: 5px;
+        margin: 2px 2px 2px 2px;
+        background: #fbfbfb;
+        border: 2px solid #303030;
+    }
+
+    div.header {
+      color: #ffffff;
+      border: 1px solid black;
+      border-radius: 5px;
+      text-align: center;
+      margin: 2px 2px 2px 2px;
+      background: border-box black;
+    }
+
+    div.idle {
+      color: #ffffff;
+      border: 1px solid black;
+      text-align: center;
+      margin: 2px 2px 2px 2px;
+      background: border-box grey;
+    }
+
+    div.waiting {
+      color: #ffffff;
+      border: 1px solid black;
+      text-align: center;
+      margin: 2px 2px 2px 2px;
+      background: border-box blue;
+    }
+
+    div.ready_to_sprinkle {
+      color: #ffffff;
+      border: 1px solid black;
+      text-align: center;
+      margin: 2px 2px 2px 2px;
+      background: border-box orange;
+    }
+
+    div.sprinkling {
+      color: #ffffff;
+      border: 1px solid black;
+      text-align: center;
+      margin: 2px 2px 2px 2px;
+      background: border-box green;
+    }
+
+    .clock {
+      font-family: 'Orbitron', sans-serif;
+      color: #121212;
+      /*background-color: brown;*/
+      /*border-radius: 3px;*/
+      text-align: center;
+      padding: 5px;
+    }
+
+    /* latin */
+
+    </style>
+
+
+    <!--
+    <paper-card class="station">
+    -->
+    <div class="station">
+
+      <div class="header">{{station_name}}</div>
+
+
+      <div class="wrapper">
+
+      <div class="act">
+
+        <template is="dom-if" if="{{!isSprinkling}}">
+          <paper-button class="indigo" on-tap="manual_start">Test</paper-button>
+        </template>
+
+        <template is="dom-if" if="{{isSprinkling}}">
+          <paper-button class="indigo" on-tap="manual_stop">Stop</paper-button>
+        </template>
+
+      </div>
+
+
+      <div class="schedule">
+
+        <div style="font-family: 'Orbitron', sans-serif;" > {{details.time.hour}} : {{details.time.minute}} </div>
+        <div>Duration 120s</div>
+        <div>  {{details.days}}</div>
+
+      </div>
+<iron-icon icon="icons:date-range"></iron-icon>
+<iron-icon icon="maps:directions-bus"></iron-icon>
+
+      <div class="countdown_status">
+
+
+
+                <template is="dom-if" if="{{isIdle}}">
+                  <div class="idle">
+                    I D L E
+                  </div>
+                </template>
+
+                <template is="dom-if" if="{{isWaiting}}">
+                  <div class="waiting">
+                    W a i t i n g
+                  <div>
+                </template>
+
+                <template is="dom-if" if="{{isReadyToSprinkle}}">
+                  <div class="ready_to_sprinkle">
+                    R e a d y  -  t o  -  S p r i n k l e
+                  <div>
+                </template>
+
+                <template is="dom-if" if="{{isSprinkling}}">
+                  <div class="sprinkling">
+                    S p r i n k l i n g !
+                  <div>
+                </template>
+
+
+
+                <!--
+                  <div>operation: {{status.operation}}</div>
+                -->
+
+                <template is="dom-if" if="{{isWaiting}}">
+
+                  <!--
+                  <div>time left: {{status.time_left}} </div>
+                  -->
+
+                  <!--
+                  <div>start time: {{status.start_time}}</div>
+                  -->
+                    <div class="clock"> {{countdown}} </div>
+                </template>
+
+      <div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <!--
+        wrapper
+      -->
+    </div>
+
+    </div>
+
+
+  </template>
+
+  <script>
+    class MyStation extends Polymer.Element {
+
+      static get is() { return 'my-station'; }
+
+      static get properties() {
+        return {
+          station_name: {
+            type: String,
+          },
+          details: {
+            type: Object,
+            observer: 'onDetails'
+          },
+          status: {
+            type: Object,
+            observer: 'onStatus'
+          },
+          time_left_str: {
+            type: String,
+          },
+          isIdle: {
+            value: false,
+            type: Boolean
+          },
+          isWaiting: {
+            value: false,
+            type: Boolean
+          },
+          isActive: {
+            value: false,
+            type: Boolean
+          },
+          isReadyToSprinkle: {
+            value: false,
+            type: Boolean
+          },
+          isSprinkling: {
+            value: false,
+            type: Boolean
+          },
+          countdown: {
+            value: '22:02:03',
+            type: String
+          }
+        };
+      }
+
+
+      manual_start(){
+        console.log(this.station_name)
+        //this.on_manual_start(this.station_name)
+        let station = this.station_name;
+
+          console.log("sending manual start XXX", station)
+
+          window.conn.call('manual_start', station, {
+              onSuccess: (dataArr, dataObj) => {
+
+                  console.log(dataArr[0])
+
+              },
+              onError: (err, detailsObj) => {
+                  console.log('RPC call failed with error ' + err);
+              }
+          });
+
+      }
+
+      manual_stop(){
+        console.log(this.station_name)
+        //this.on_manual_start(this.station_name)
+        let station = this.station_name;
+
+
+          window.conn.call('manual_stop', station, {
+              onSuccess: (dataArr, dataObj) => {
+
+                  console.log(dataArr[0])
+
+              },
+              onError: (err, detailsObj) => {
+                  console.log('RPC call failed with error ' + err);
+              }
+          });
+
+      }
+
+      onDetails(new_details) {
+        console.log("New details:",new_details)
+      }
+
+      onStatus(new_status) {
+        console.log("New status:",new_status)
+        this.isIdle = new_status.operation == 'Idle';
+        this.isWaiting = new_status.operation == 'Waiting';
+        this.isReadyToSprinkle = new_status.operation == 'Ready to Sprinkle';
+        this.isSprinkling = new_status.operation == 'Sprinkling'
+
+        this.isActive = !this.isIdle;
+        //let h = Math.trunc(new_status.time_left / 3600);
+        //let m = Math.trunc((new_status.time_left - (h * 60)) / 60)
+        //let s = 0;//Math.trunc((new_status.time_left - (hf * 60) ) / 60)
+
+        let s = new_status.time_left - (Math.trunc(new_status.time_left / 60) * 60 );
+        let total_minutes = Math.trunc(new_status.time_left / 60)
+        let m = total_minutes - (Math.trunc(total_minutes/ 60) * 60 );
+        let h = Math.trunc(new_status.time_left / (60 * 60))
+        //let mf = new_status.time_left / 60
+        //let hf = mf / 60
+
+        let h_str = "" + h;
+        let m_str = ("0" + m).slice(-2);
+        let s_str = ("0" + s).slice(-2);
+
+        this.countdown = "" + h_str + " : " + m_str + " : " + s_str + "";
+        console.log(new_status.time_left)
+        console.log(h,':',m,':',s)
+        console.log(this.countdown)
+      }
+
+      /*
+      isIdle(status) {
+            console.log("!!!!!!!!!!!!!!!!!!!!!!")
+              return status.operation == 'Idle'
+      }
+      */
+
+    }
+
+
+
+
+    window.customElements.define(MyStation.is, MyStation);
+  </script>
+</dom-module>

@@ -2,18 +2,32 @@
   "entrypoint": "index.html",
   "shell": "src/my-app.html",
   "fragments": [
-    "src/my-view1.html",
-    "src/my-view2.html",
-    "src/my-view3.html",
-    "src/my-view404.html"
+    "src/my-app.html",
+    "src/my-station.html",
+    "src/my-stationstatus.html"
   ],
-  "sourceGlobs": [
-   "src/**/*",
-   "images/**/*",
-   "bower.json"
+  "sources": [
+    "src/**/*",
+    "images/**/*",
+    "bower_components/when/*.js",
+    "bower_components/autobahn/*.js",
+    "bower.json",
+    "service-worker.js"
   ],
-  "includeDependencies": [
+  "extraDependencies": [
     "manifest.json",
-    "bower_components/webcomponentsjs/webcomponents-lite.min.js"
-  ]
+    "bower_components/webcomponentsjs/*.js",
+    "bower_components/when/*.js",
+    "bower_components/autobahn/*.js"
+  ],
+  "lint": {
+    "rules": ["polymer-2"]
+  },
+  "builds": [{
+    "name": "bundled",
+    "bundle": false,
+    "js": {"minify": false},
+    "css": {"minify": false},
+    "html": {"minify": false}
+  }]
 }

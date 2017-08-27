@@ -1,0 +1,229 @@
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
+<link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/paper-checkbox/paper-checkbox.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+
+<script src="wampy-all.min.js"></script>
+
+
+<!--
+<link rel="import" href="my-icons.html">
+-->
+
+<link rel="import" href="my-station.html">
+<link rel="import" href="my-stationstatus.html">
+
+<dom-module id="my-app">
+  <template>
+    <style>
+
+    div.main {
+      margin: 10px 10px 10px 10px;
+    }
+
+    </style>
+
+<div class="main">
+<template is="dom-repeat" items="{{stations}}">
+
+
+  <my-station station_name="{{item.name}}" details="{{item.details}}" status="{{item.status}}"></my-station>
+
+  <div>
+<br>
+  </div>
+
+</template>
+</div>
+
+
+<!--
+
+
+<my-stationstatus></my-stationstatus>
+
+
+
+<paper-checkbox>sdgs fsf sfd </paper-checkbox>
+
+
+<paper-input always-float-label label="Floating label"></paper-input>
+<paper-input label="username">
+  <iron-icon icon="mail" prefix></iron-icon>
+  <div suffix>@email.com</div>
+</paper-input>
+
+-->
+
+  </template>
+
+  <script>
+    class MyApp extends Polymer.Element {
+
+      static get is() { return 'my-app'; }
+
+      ready() {
+        super.ready()
+        this.hello()
+      }
+
+      hello() {
+
+        this.ws = new Wampy('/centrum', {
+            realm: 'realm1',
+            onConnect: () => {
+                console.log('Connected to Router!');
+
+
+                this.ws.call('get_config', null, {
+                    onSuccess: (dataArr, dataObj) => {
+                        console.log('RPC successfully called');
+                        let elem = document.getElementById("my-app");
+                        console.log(elem)
+                        this.push('stations', 'ttt')
+                        console.log(dataArr[0])
+                        let obj = JSON.parse(dataArr[0])
+
+                        this.stations = []
+                        this.backmap = {}
+                        for (var station_i in obj['Stations']) {
+                          //#alert(array[i]);
+                          let station_obj = obj['Stations'][station_i]
+                          console.log('+++', station_obj)
+                          console.log(">>>",station_obj['Station']['name'])
+                          this.backmap[station_obj['Station']['name']] = station_i;
+                          this.push('stations', {
+                              name: station_obj['Station']['name'],
+                              details: station_obj['Station'],
+                              status: {
+                                operation:"n/a",
+                                time_left:-1,
+                                start_time:-1,
+                              }
+                            }
+                          )
+
+
+                        }
+
+
+
+                        //console.log('Server time is ' + obj['Stations']);
+
+
+                        this.ws.subscribe('station_status',  (dataArr, dataObj) => {
+                          //console.log('update >> ', dataArr[0]);
+                          for (var station_name in dataArr[0]) {
+                            let station_status = dataArr[0][station_name];
+                            //console.log("^^^^", station_status);
+                            //console.log(this.backmap)
+                            let pos = 'stations.' + this.backmap[station_name] + '.status';
+                            //console.log("pos", pos)
+                            this.set(pos, station_status)
+                            //let pos_time_left_str = 'stations.' + this.backmap[station_name] + '.time_left_str';
+
+                            //this.set(pos_time_left_str, "x" + (station_status.time_left / 3600) + "h")
+
+                          }
+
+                        })
+
+                    },
+                    onError: (err, detailsObj) => {
+                        console.log('RPC call failed with error ' + err);
+                    }
+                });
+
+            }
+        });
+        window.conn = this.ws
+
+      }
+
+      static get properties() {
+        return {
+          stations: {
+            type: Array,
+            value: [],
+          },
+        };
+      }
+
+      static get observers() {
+        return [
+          '_routePageChanged(routeData.page)',
+        ];
+      }
+
+      /*
+      manual_start(station) {
+        console.log("sending manual start XXX", station)
+        try {
+        this.ws.call('manual_start', station, {
+            onSuccess: (dataArr, dataObj) => {
+
+                console.log(dataArr[0])
+
+            },
+            onError: (err, detailsObj) => {
+                console.log('RPC call failed with error ' + err);
+            }
+        });
+      }
+        catch(err) {
+    console.log("shit",err)
+}
+
+      }
+      */
+
+      _routePageChanged(page) {
+        // Polymer 2.0 will call with `undefined` on initialization.
+        // Ignore until we are properly called with a string.
+        if (page === undefined) {
+          return;
+        }
+
+        // If no page was found in the route data, page will be an empty string.
+        // Deault to 'view1' in that case.
+        this.page = page || 'view1';
+
+        // Close a non-persistent drawer when the page & route are changed.
+        if (!this.$.drawer.persistent) {
+          this.$.drawer.close();
+        }
+      }
+
+      _pageChanged(page) {
+        // Load page import on demand. Show 404 page if fails
+        var resolvedPageUrl = this.resolveUrl('my-' + page + '.html');
+        Polymer.importHref(
+            resolvedPageUrl,
+            null,
+            this._showPage404.bind(this),
+            true);
+      }
+
+      _showPage404() {
+        this.page = 'view404';
+      }
+    }
+
+    window.customElements.define(MyApp.is, MyApp);
+  </script>
+
+  <script src="conn.js"></script>
+
+</dom-module>

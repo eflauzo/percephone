@@ -3,12 +3,12 @@ name: "percephone1"
 
 stations:
   - station:
-      days: [Monday]
+      days: [Thursday]
       name: "Station1"
       time:
-        hour: 21
-        minute: 0
-        duration: 120.0
+        hour: 23
+        minute: 53
+        duration: 60.0
       enabled: true
       control:
         gpio: 18
@@ -17,7 +17,7 @@ stations:
       days: [Monday, Tuesday]
       name: "Station2"
       time:
-        hour: 21
+        hour: 22
         minute: 0
         duration: 120.0
       enabled: false
@@ -28,7 +28,7 @@ stations:
       days: [Wednesday]
       name: "Station3"
       time:
-        hour: 21
+        hour: 23
         minute: 0
         duration: 120.0
       enabled: true
@@ -39,7 +39,7 @@ stations:
       days: [Friday, Sunday]
       name: "Station4"
       time:
-        hour: 21
+        hour: 19
         minute: 0
         duration: 120.0
       enabled: false

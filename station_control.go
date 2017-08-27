@@ -37,7 +37,9 @@ func (station *StationControl) OutputPin(value int) {
 	pin := rpio.Pin(station.config.Control.GPIO)
 
 	if err := rpio.Open(); err != nil {
-		panic(err)
+		//panic(err)
+		log.Printf("Can not open GPIO PIN %s", err)
+		return
 	}
 
 	pin.Output()
@@ -54,19 +56,56 @@ func (station *StationControl) StopSprinkle() {
 	station.OutputPin(0)
 }
 
-func NewStationControl(cfg *CfgStationData) *StationControl {
-	result := StationControl{}
-	result.config = cfg
-	if result.config.Enabled {
-		result.CurrentState = WAITING_SPRINKLE_TIME
+func NewStationControl(station_cfg *CfgStationData) *StationControl {
+	new_station_control := new(StationControl)
+	new_station_control.config = station_cfg
+	if new_station_control.config.Enabled {
+		new_station_control.CurrentState = WAITING_SPRINKLE_TIME
 	} else {
-		result.CurrentState = IDLE
+		new_station_control.CurrentState = IDLE
 	}
-	return &result
+	return new_station_control
 }
 
 type StationMaster struct {
 	Stations map[string]*StationControl
+}
+
+func (station *StationControl) NextSprinkleTime(currenttime float64) float64 {
+	// we iterate of days starting from this day, and check times for sprinkle
+	// if sprinkle in future we return
+	current_time_clock := time.Unix(int64(currenttime), 0)
+	year, month, day := current_time_clock.Date()
+
+	//wd := current_time_clock.Weekday()
+	for day_offset := 0; day_offset < 8; day_offset++ {
+
+		sprinkle_time := time.Date(
+			year,
+			month,
+			day,
+			station.config.Time.Hour,
+			station.config.Time.Minute,
+			0,
+			0,
+			current_time_clock.Location()).Add(time.Duration(day_offset*24) * time.Hour)
+
+		weekday_match := false
+		for _, programmed_weekday := range station.config.Days {
+			if programmed_weekday == sprinkle_time.Weekday().String() {
+				weekday_match = true
+				break
+			}
+		}
+
+		if weekday_match {
+			unix_sprinkle_time := (float64)(sprinkle_time.Unix())
+			if unix_sprinkle_time > currenttime {
+				return unix_sprinkle_time
+			}
+		}
+	}
+	return -1.0
 }
 
 func (master *StationMaster) ControlCycle(currenttime float64) {
@@ -80,7 +119,7 @@ func (master *StationMaster) ControlCycle(currenttime float64) {
 			time_left := float64(v.config.Time.Duration) - (currenttime - v.sprinkle_start_time)
 			fmt.Printf("Time left: %2.2f\n", time_left)
 			if time_left <= 0.0 {
-				v.StartSprinkle()
+				v.StopSprinkle()
 				v.CurrentState = WAITING_SPRINKLE_TIME
 				v.sprinkle_start_time = 0.0
 				log.Println(fmt.Sprintf("Station '%s' entering 'Wait for Sprinkle Mode'\n", k))
@@ -94,28 +133,17 @@ func (master *StationMaster) ControlCycle(currenttime float64) {
 	for k, v := range master.Stations {
 		//fmt.Printf("Checking %s\n", k)
 		if v.CurrentState == WAITING_SPRINKLE_TIME {
-			//fmt.Print("   YER\n")
-			// somebody waiting to sprinkle
-			//v.StSprinkle()
-			//v.CurrentState = SPRINKLING
-			//v.sprinkle_start_time = time
 
 			current_time_clock := time.Unix(int64(currenttime), 0)
 
 			hour, minute, _ := current_time_clock.Clock()
-
-			//if
-			//fmt.Println("AAA")
 			weekday_match := false
 			for _, programmed_weekday := range v.config.Days {
 				if programmed_weekday == current_time_clock.Weekday().String() {
 					weekday_match = true
-					//fmt.Println("1!!")
 					break
 				}
 			}
-
-			//fmt.Print("Hour ", hour, "   Min ", minute)
 
 			if weekday_match && (hour == v.config.Time.Hour) && (minute == v.config.Time.Minute) {
 				v.CurrentState = READY_SPRINKLE
@@ -125,8 +153,6 @@ func (master *StationMaster) ControlCycle(currenttime float64) {
 
 		}
 	}
-
-	//fmt.Printf("active_stations %d\n", active_stations)
 
 	if active_stations == 0 {
 		// can start
@@ -144,35 +170,3 @@ func (master *StationMaster) ControlCycle(currenttime float64) {
 	}
 
 }
-
-/*
-
-// this is main worker that overlooks
-type StationMaster struct {
-
-
-
-
-
-}
-
-*/
-
-/*
-func (*StationControl) start(){
-
-}
-
-func (*StationControl) stop(){
-
-}
-*/
-
-//
-// func Run() {
-//
-//
-//
-//
-//
-// }
